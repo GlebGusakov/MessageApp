@@ -10,19 +10,41 @@ import UIKit
 
 class LoginController: UIViewController {
     
-    let titleLabelView: UILabel = {
-        let view = UILabel()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.masksToBounds = true
-        view.text = "Sign up"
-        view.font = UIFont(name: "Chalkduster", size: 30)
-        view.textColor = UIColor(r: 179, g: 93, b: 169)
+//    let titleLabelView: UILabel = {
+//        let view = UILabel()
+//        view.translatesAutoresizingMaskIntoConstraints = false
+//        view.layer.masksToBounds = true
+//        view.text = "Sign up"
+//        view.font = UIFont(name: "Snell Roundhand", size: 40)
+//        view.textColor = UIColor(r: 116, g: 176, b: 238)
+//        return view
+//    }()
+    
+    let gradinetView: UIView = {
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 400))
+        let gradient = CAGradientLayer()
+        gradient.colors = [UIColor.red.cgColor, UIColor.blue.cgColor]
+        
+        // Gradient from left to right
+        gradient.startPoint = CGPoint(x: 0.0, y: 0.5)
+        gradient.endPoint = CGPoint(x: 1.0, y: 0.5)
+        gradient.frame = view.bounds
+        // add the gradient layer to the views layer for rendering
+        view.layer.addSublayer(gradient)
+        let label = UILabel(frame: view.bounds)
+        label.text = "Sign up"
+        label.font = UIFont(name: "Papyrus", size: 70)
+        label.textAlignment = .center
+        view.addSubview(label)
+        
+        // Tha magic! Set the label as the views mask
+        view.mask = label
         return view
     }()
     
     let nameContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(r: 179, g: 117, b: 169)
+        view.backgroundColor = UIColor(r: 148, g: 141, b: 182)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerRadius = 0
         view.layer.masksToBounds = true
@@ -31,7 +53,7 @@ class LoginController: UIViewController {
     
     let emailContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(r: 179, g: 117, b: 169)
+        view.backgroundColor = UIColor(r: 189, g: 115, b: 152)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerRadius = 0
         view.layer.masksToBounds = true
@@ -40,7 +62,7 @@ class LoginController: UIViewController {
     
     let passContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(r: 179, g: 117, b: 169)
+        view.backgroundColor = UIColor(r: 241, g: 116, b: 124)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerRadius = 0
         view.layer.masksToBounds = true
@@ -49,11 +71,12 @@ class LoginController: UIViewController {
     
     let loginRegisterButton: UIButton = {
         let button = UIButton(type: .system)
-        button.backgroundColor = UIColor(r: 63, g: 11, b: 55)
+        button.backgroundColor = UIColor(r: 241, g: 106, b: 127)
         button.setTitle("Create your account", for: UIControl.State())
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitleColor(UIColor.white, for: UIControl.State())
-        button.titleLabel?.font = UIFont(name: "Marker Felt", size: 16)
+        button.layer.cornerRadius = 10
+        button.titleLabel?.font = UIFont(name: "Copperplate", size: 24)
         return button
     }()
     
@@ -84,23 +107,31 @@ class LoginController: UIViewController {
         return tf
     }()
     
+    let backImage = UIColor(patternImage: UIImage(named: "Background")!)
+
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = UIColor(r: 99, g: 35, b: 89)
+        
+        view.backgroundColor = backImage
+        
+          //  UIColor(r: 99, g: 35, b: 89)
         
         view.addSubview(nameContainerView)
         view.addSubview(emailContainerView)
         view.addSubview(passContainerView)
         view.addSubview(loginRegisterButton)
-        view.addSubview(titleLabelView)
+//        view.addSubview(titleLabelView)
+        view.addSubview(gradinetView)
         //        view.addSubview(profileImageView)
         
         setupNameContainerView()
         setupEmailContainerView()
         setupPassContainerView()
         setupLoginRegisterButton()
-        setupTitleLabelView()
+        setupGradintLabelView()
+//        setupTitleLabelView()
         //        setupProfileImageView()
     }
     
@@ -111,16 +142,23 @@ class LoginController: UIViewController {
     //        profileImageView.widthAnchor.constraint(equalToConstant: 150).isActive = true
     //        profileImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
     //    }
-    func setupTitleLabelView() {
-        titleLabelView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        titleLabelView.bottomAnchor.constraint(equalTo: nameContainerView.topAnchor, constant: -15).isActive = true
-        titleLabelView.widthAnchor.constraint(equalToConstant: 150).isActive = true
-        titleLabelView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+    
+//    func setupTitleLabelView() {
+//        titleLabelView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+//        titleLabelView.bottomAnchor.constraint(equalTo: nameContainerView.topAnchor, constant: -15).isActive = true
+//        titleLabelView.widthAnchor.constraint(equalToConstant: 130).isActive = true
+//        titleLabelView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+//    }
+    func setupGradintLabelView() {
+        gradinetView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        gradinetView.bottomAnchor.constraint(equalTo: nameContainerView.topAnchor, constant: 93).isActive = true
+        gradinetView.widthAnchor.constraint(equalToConstant: 0).isActive = true
+        gradinetView.heightAnchor.constraint(equalToConstant: 0).isActive = true
     }
     func setupNameContainerView() {
         nameContainerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         nameContainerView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-        nameContainerView.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -40).isActive = true
+        nameContainerView.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -20).isActive = true
         nameContainerView.heightAnchor.constraint(equalToConstant: 50).isActive = true
         nameContainerView.addSubview(nameTextField)
         nameTextField.leftAnchor.constraint(equalTo: nameContainerView.leftAnchor, constant: 12).isActive = true
