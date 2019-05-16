@@ -7,37 +7,23 @@
 //
 
 import UIKit
+import Firebase
 
 class LoginController: UIViewController {
     
-//    let titleLabelView: UILabel = {
-//        let view = UILabel()
-//        view.translatesAutoresizingMaskIntoConstraints = false
-//        view.layer.masksToBounds = true
-//        view.text = "Sign up"
-//        view.font = UIFont(name: "Snell Roundhand", size: 40)
-//        view.textColor = UIColor(r: 116, g: 176, b: 238)
-//        return view
-//    }()
-    
-    let gradinetView: UIView = {
+    let titleView: UIView = {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 400, height: 400))
         let gradient = CAGradientLayer()
         gradient.colors = [UIColor.red.cgColor, UIColor.blue.cgColor]
-        
-        // Gradient from left to right
         gradient.startPoint = CGPoint(x: 0.0, y: 0.5)
         gradient.endPoint = CGPoint(x: 1.0, y: 0.5)
         gradient.frame = view.bounds
-        // add the gradient layer to the views layer for rendering
         view.layer.addSublayer(gradient)
         let label = UILabel(frame: view.bounds)
         label.text = "Sign up"
         label.font = UIFont(name: "Papyrus", size: 70)
         label.textAlignment = .center
         view.addSubview(label)
-        
-        // Tha magic! Set the label as the views mask
         view.mask = label
         return view
     }()
@@ -69,17 +55,6 @@ class LoginController: UIViewController {
         return view
     }()
     
-    let loginRegisterButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.backgroundColor = UIColor(r: 241, g: 106, b: 127)
-        button.setTitle("Create your account", for: UIControl.State())
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitleColor(UIColor.white, for: UIControl.State())
-        button.layer.cornerRadius = 10
-        button.titleLabel?.font = UIFont(name: "Copperplate", size: 24)
-        return button
-    }()
-    
     let nameTextField: UITextField = {
         let tf = UITextField()
         tf.placeholder = "Full name"
@@ -88,7 +63,6 @@ class LoginController: UIViewController {
         return tf
     }()
     
-    
     let emailTextField: UITextField = {
         let tf = UITextField()
         tf.placeholder = "Email"
@@ -96,7 +70,6 @@ class LoginController: UIViewController {
         tf.font = UIFont(name: "Marker Felt", size: 20)
         return tf
     }()
-    
     
     let passwordTextField: UITextField = {
         let tf = UITextField()
@@ -107,31 +80,70 @@ class LoginController: UIViewController {
         return tf
     }()
     
+    lazy var loginRegisterButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.backgroundColor = UIColor(r: 241, g: 106, b: 127)
+        button.setTitle("Create your account", for: UIControl.State())
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitleColor(UIColor.white, for: UIControl.State())
+        button.layer.cornerRadius = 10
+        button.titleLabel?.font = UIFont(name: "Copperplate", size: 24)
+        button.addTarget(self, action: #selector(handleRegister), for: .touchUpInside)
+        return button
+    }()
+    
+    @objc func handleRegister() {
+        guard let email = emailTextField.text, let password = passwordTextField.text, let name = nameTextField.text else {
+            print("Form is not valid")
+            return
+        }
+        
+        Auth.auth().createUser(withEmail: email, password: password, completion: { (res, error) in
+            
+            if let error = error {
+                print(error)
+                return
+            }
+            
+            guard let uid = res?.user.uid else {
+                return
+            }
+            
+            let ref = Database.database().reference(fromURL: "https://messageapp-93d74.firebaseio.com/")
+            let usersReference = ref.child("users").child(uid)
+            let values = ["name": name, "email": email]
+            usersReference.updateChildValues(values, withCompletionBlock: { (err, ref) in
+                
+                if let err = err {
+                    print(err)
+                    return
+                }
+                
+                print("Saved user successfully into Firebase db")
+                
+            })
+            
+        })
+    }
+    
     let backImage = UIColor(patternImage: UIImage(named: "Background")!)
-
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        
         view.backgroundColor = backImage
-        
-          //  UIColor(r: 99, g: 35, b: 89)
-        
         view.addSubview(nameContainerView)
         view.addSubview(emailContainerView)
         view.addSubview(passContainerView)
         view.addSubview(loginRegisterButton)
-//        view.addSubview(titleLabelView)
-        view.addSubview(gradinetView)
+        //        view.addSubview(titleView)
         //        view.addSubview(profileImageView)
         
         setupNameContainerView()
         setupEmailContainerView()
         setupPassContainerView()
         setupLoginRegisterButton()
-        setupGradintLabelView()
-//        setupTitleLabelView()
+        //        setupGradintLabelView()
         //        setupProfileImageView()
     }
     
@@ -143,18 +155,13 @@ class LoginController: UIViewController {
     //        profileImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
     //    }
     
-//    func setupTitleLabelView() {
-//        titleLabelView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-//        titleLabelView.bottomAnchor.constraint(equalTo: nameContainerView.topAnchor, constant: -15).isActive = true
-//        titleLabelView.widthAnchor.constraint(equalToConstant: 130).isActive = true
-//        titleLabelView.heightAnchor.constraint(equalToConstant: 150).isActive = true
-//    }
     func setupGradintLabelView() {
-        gradinetView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        gradinetView.bottomAnchor.constraint(equalTo: nameContainerView.topAnchor, constant: 93).isActive = true
-        gradinetView.widthAnchor.constraint(equalToConstant: 0).isActive = true
-        gradinetView.heightAnchor.constraint(equalToConstant: 0).isActive = true
+        titleView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        titleView.bottomAnchor.constraint(equalTo: nameContainerView.topAnchor, constant: 93).isActive = true
+        titleView.widthAnchor.constraint(equalToConstant: 0).isActive = true
+        titleView.heightAnchor.constraint(equalToConstant: 0).isActive = true
     }
+    
     func setupNameContainerView() {
         nameContainerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         nameContainerView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
