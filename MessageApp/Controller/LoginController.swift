@@ -88,7 +88,7 @@ class LoginController: UIViewController {
         button.setTitleColor(UIColor.white, for: UIControl.State())
         button.layer.cornerRadius = 10
         button.titleLabel?.font = UIFont(name: "Copperplate", size: 24)
-        button.addTarget(self, action: #selector(handleRegister), for: .touchUpInside)
+        button.addTarget(self, action: #selector(handleLoginRegister), for: .touchUpInside)
         return button
     }()
     
@@ -118,12 +118,55 @@ class LoginController: UIViewController {
                     print(err)
                     return
                 }
-                
+                self.dismiss(animated: true, completion: nil)
                 print("Saved user successfully into Firebase db")
                 
             })
             
         })
+    }
+    
+    lazy var loginRegisterSegmentedControl: UISegmentedControl = {
+        let sc = UISegmentedControl(items: ["Login", "Register"])
+        sc.translatesAutoresizingMaskIntoConstraints = false
+        sc.tintColor = UIColor.white
+        sc.selectedSegmentIndex = 1
+        sc.addTarget(self, action: #selector(handleLoginRegisterChange), for: .valueChanged)
+        return sc
+    }()
+    
+    @objc func handleLoginRegisterChange() {
+        let title = loginRegisterSegmentedControl.titleForSegment(at: loginRegisterSegmentedControl.selectedSegmentIndex)
+        loginRegisterButton.setTitle(title, for: UIControl.State())
+        nameContainerView.isHidden = loginRegisterSegmentedControl.selectedSegmentIndex == 0
+    }
+    
+    @objc func handleLoginRegister() {
+        if loginRegisterSegmentedControl.selectedSegmentIndex == 0 {
+            handleLogin()
+        } else {
+            handleRegister()
+        }
+    }
+    
+    func handleLogin() {
+        guard let email = emailTextField.text, let password = passwordTextField.text else {
+            print("Form is not valid")
+            return
+        }
+        
+        Auth.auth().signIn(withEmail: email, password: password, completion: { (user, error) in
+            
+            if let error = error {
+                print(error)
+                return
+            }
+            
+            //successfully logged in our user
+            self.dismiss(animated: true, completion: nil)
+            
+        })
+        
     }
     
     let backImage = UIColor(patternImage: UIImage(named: "Background")!)
@@ -136,6 +179,8 @@ class LoginController: UIViewController {
         view.addSubview(emailContainerView)
         view.addSubview(passContainerView)
         view.addSubview(loginRegisterButton)
+        view.addSubview(loginRegisterSegmentedControl)
+        
         //        view.addSubview(titleView)
         //        view.addSubview(profileImageView)
         
@@ -143,6 +188,8 @@ class LoginController: UIViewController {
         setupEmailContainerView()
         setupPassContainerView()
         setupLoginRegisterButton()
+        setupLoginRegisterSegmentedControl()
+        
         //        setupGradintLabelView()
         //        setupProfileImageView()
     }
@@ -206,6 +253,13 @@ class LoginController: UIViewController {
         loginRegisterButton.topAnchor.constraint(equalTo: passContainerView.bottomAnchor, constant: 12).isActive = true
         loginRegisterButton.widthAnchor.constraint(equalTo: passContainerView.widthAnchor).isActive = true
         loginRegisterButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+    }
+    
+    func setupLoginRegisterSegmentedControl() {
+        loginRegisterSegmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        loginRegisterSegmentedControl.bottomAnchor.constraint(equalTo: nameContainerView.topAnchor, constant: -12).isActive = true
+        loginRegisterSegmentedControl.widthAnchor.constraint(equalTo: nameContainerView.widthAnchor, multiplier: 1).isActive = true
+        loginRegisterSegmentedControl.heightAnchor.constraint(equalToConstant: 36).isActive = true
     }
     
     override var preferredStatusBarStyle : UIStatusBarStyle {
