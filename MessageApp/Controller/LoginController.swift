@@ -156,18 +156,26 @@ class LoginController: UIViewController {
         }
         
         Auth.auth().signIn(withEmail: email, password: password, completion: { (user, error) in
-            
             if let error = error {
                 print(error)
                 return
             }
-            
             //successfully logged in our user
             self.dismiss(animated: true, completion: nil)
-            
         })
         
     }
+    
+    var messagesController: MessagesController?
+    
+    let inputsContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.white
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.layer.cornerRadius = 5
+        view.layer.masksToBounds = true
+        return view
+    }()
     
     let backImage = UIColor(patternImage: UIImage(named: "Background")!)
     
@@ -190,6 +198,8 @@ class LoginController: UIViewController {
         setupLoginRegisterButton()
         setupLoginRegisterSegmentedControl()
         
+        
+
         //        setupGradintLabelView()
         //        setupProfileImageView()
     }
@@ -230,7 +240,6 @@ class LoginController: UIViewController {
         emailContainerView.addSubview(emailTextField)
         emailTextField.leftAnchor.constraint(equalTo: emailContainerView.leftAnchor, constant: 12).isActive = true
         emailTextField.topAnchor.constraint(equalTo: emailContainerView.topAnchor, constant: 17).isActive = true
-        
         emailTextField.widthAnchor.constraint(equalTo: emailContainerView.widthAnchor).isActive = true
         emailTextField.heightAnchor.constraint(equalTo: emailContainerView.heightAnchor, multiplier: 1/3).isActive = true
     }
@@ -265,6 +274,13 @@ class LoginController: UIViewController {
     override var preferredStatusBarStyle : UIStatusBarStyle {
         return .lightContent
     }
+    
+    override func touchesBegan(_ touches: Set<UITouch>,
+                               with event: UIEvent?) {
+        self.view.endEditing(true)
+    }
+    
+   
 }
 
 extension UIColor {
