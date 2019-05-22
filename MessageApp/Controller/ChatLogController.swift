@@ -14,46 +14,10 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     var user: User? {
         didSet {
             navigationItem.title = user?.name
+            observeMessages()
         }
     }
-    
     var messages = [Message]()
-    let cellId = "cellId"
-    lazy var inputTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Enter message..."
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.delegate = self
-        return textField
-    }()
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        collectionView?.backgroundColor = UIColor.white
-        collectionView?.alwaysBounceVertical = true
-        collectionView?.register(ChatMessageCell.self, forCellWithReuseIdentifier: cellId)
-        
-        setupInputComponents()
-        observeMessages()
-
-    }
-    
-    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return messages.count
-    }
-    
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! ChatMessageCell
-        let message = messages[indexPath.item]
-        cell.textView.text = message.text
-        inputTextField.endEditing(true)
-        return cell
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: view.frame.width, height: 80)
-    }
     
     func observeMessages() {
         guard let uid = Auth.auth().currentUser?.uid else {
@@ -78,11 +42,81 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         }, withCancel: nil)
     }
     
+    lazy var inputTextField: UITextField = {
+        let textField = UITextField()
+        textField.placeholder = "MessageApp"
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.delegate = self
+        return textField
+    }()
+    
+    let cellId = "cellId"
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        collectionView?.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 58, right: 0)
+        collectionView?.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
+        collectionView?.alwaysBounceVertical = true
+        collectionView?.backgroundColor = UIColor.white
+        collectionView?.register(ChatMessageCell.self, forCellWithReuseIdentifier: cellId)
+        setupInputComponents()
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return messages.count
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! ChatMessageCell
+        let message = messages[indexPath.item]
+        cell.textView.text = message.text
+        setupCell(cell, message: message)
+        cell.bubbleWidthAnchor?.constant = estimateFrameForText(message.text!).width + 32
+        return cell
+    }
+    
+    fileprivate func setupCell(_ cell: ChatMessageCell, message: Message) {
+        if message.fromId == Auth.auth().currentUser?.uid {
+            //outgoing
+            cell.bubbleView.backgroundColor = ChatMessageCell.myColor
+            cell.textView.textColor = UIColor.white
+            
+            cell.bubbleViewRightAnchor?.isActive = true
+            cell.bubbleViewLeftAnchor?.isActive = false
+        } else {
+            //incoming
+            cell.bubbleView.backgroundColor = UIColor(r: 241, g: 116, b: 124)
+            cell.textView.textColor = UIColor.black
+            cell.bubbleViewRightAnchor?.isActive = false
+            cell.bubbleViewLeftAnchor?.isActive = true
+        }
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        collectionView?.collectionViewLayout.invalidateLayout()
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        var height: CGFloat = 80
+        if let text = messages[indexPath.item].text {
+            height = estimateFrameForText(text).height + 20
+        }
+        return CGSize(width: view.frame.width, height: height)
+    }
+    
+    fileprivate func estimateFrameForText(_ text: String) -> CGRect {
+        let size = CGSize(width: 200, height: 1000)
+        let options = NSStringDrawingOptions.usesFontLeading.union(.usesLineFragmentOrigin)
+        return NSString(string: text).boundingRect(with: size, options: options, attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont.systemFont(ofSize: 16)]), context: nil)
+    }
+    
     func setupInputComponents() {
         let containerView = UIView()
-        containerView.translatesAutoresizingMaskIntoConstraints = false
         containerView.backgroundColor = UIColor.white
+        containerView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(containerView)
+        //x,y,w,h
         containerView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
         containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         containerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
@@ -92,11 +126,13 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         sendButton.addTarget(self, action: #selector(handleSend), for: .touchUpInside)
         containerView.addSubview(sendButton)
+        //x,y,w,h
         sendButton.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
         sendButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
         sendButton.widthAnchor.constraint(equalToConstant: 80).isActive = true
         sendButton.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
         containerView.addSubview(inputTextField)
+        //x,y,w,h
         inputTextField.leftAnchor.constraint(equalTo: containerView.leftAnchor, constant: 8).isActive = true
         inputTextField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
         inputTextField.rightAnchor.constraint(equalTo: sendButton.leftAnchor).isActive = true
@@ -105,6 +141,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         separatorLineView.backgroundColor = UIColor(r: 220, g: 220, b: 220)
         separatorLineView.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(separatorLineView)
+        //x,y,w,h
         separatorLineView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
         separatorLineView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
         separatorLineView.widthAnchor.constraint(equalTo: containerView.widthAnchor).isActive = true
@@ -121,9 +158,10 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let values = ["text": inputTextField.text!, "toId": toId, "fromId": fromId, "timestamp": timestamp] as [String : Any]
         childRef.updateChildValues(values) { (error, ref) in
             if error != nil {
-                print(error ?? "")
+                print(error!)
                 return
             }
+            self.inputTextField.text = nil
             guard let messageId = childRef.key else { return }
             let userMessagesRef = Database.database().reference().child("user-messages").child(fromId).child(messageId)
             userMessagesRef.setValue(1)
@@ -137,4 +175,15 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         return true
     }
 }
+// Helper function inserted by Swift 4.2 migrator.
+fileprivate func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
+    guard let input = input else { return nil }
+    return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value)})
+}
+
+// Helper function inserted by Swift 4.2 migrator.
+fileprivate func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
+    return input.rawValue
+}
+
 

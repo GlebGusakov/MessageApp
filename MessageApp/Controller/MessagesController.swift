@@ -35,6 +35,7 @@ fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 
 class MessagesController: UITableViewController {
     
+    var timer: Timer?
     var messages = [Message]()
     var messagesDictionary = [String: Message]()
     let cellId = "cellId"
@@ -71,10 +72,21 @@ class MessagesController: UITableViewController {
                         self.tableView.reloadData()
                     })
                 }
+                self.timer?.invalidate()
+                print("just canceled our timer")
                 
+                self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
+                print("schedule a table reload in 0.1 sec")
             }, withCancel: nil)
             
         }, withCancel: nil)
+    }
+    
+    @objc func handleReloadTable() {
+        DispatchQueue.main.async(execute: {
+            print("reloaded the table")
+            self.tableView.reloadData()
+        })
     }
     
     func observeMessages() {
