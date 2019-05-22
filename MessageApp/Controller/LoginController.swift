@@ -97,30 +97,24 @@ class LoginController: UIViewController {
             print("Form is not valid")
             return
         }
-        
         Auth.auth().createUser(withEmail: email, password: password, completion: { (res, error) in
-            
             if let error = error {
                 print(error)
                 return
             }
-            
             guard let uid = res?.user.uid else {
                 return
             }
-            
             let ref = Database.database().reference(fromURL: "https://messageapp-93d74.firebaseio.com/")
             let usersReference = ref.child("users").child(uid)
             let values = ["name": name, "email": email]
             usersReference.updateChildValues(values, withCompletionBlock: { (err, ref) in
-                
                 if let err = err {
                     print(err)
                     return
                 }
                 self.dismiss(animated: true, completion: nil)
                 print("Saved user successfully into Firebase db")
-                
             })
             
         })
@@ -154,7 +148,6 @@ class LoginController: UIViewController {
             print("Form is not valid")
             return
         }
-        
         Auth.auth().signIn(withEmail: email, password: password, completion: { (user, error) in
             if let error = error {
                 print(error)
@@ -163,7 +156,6 @@ class LoginController: UIViewController {
             //successfully logged in our user
             self.dismiss(animated: true, completion: nil)
         })
-        
     }
     
     var messagesController: MessagesController?
@@ -197,9 +189,6 @@ class LoginController: UIViewController {
         setupPassContainerView()
         setupLoginRegisterButton()
         setupLoginRegisterSegmentedControl()
-        
-        
-
         //        setupGradintLabelView()
         //        setupProfileImageView()
     }
@@ -279,8 +268,6 @@ class LoginController: UIViewController {
                                with event: UIEvent?) {
         self.view.endEditing(true)
     }
-    
-   
 }
 
 extension UIColor {
