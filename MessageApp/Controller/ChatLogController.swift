@@ -8,6 +8,8 @@
 
 import UIKit
 import Firebase
+import MobileCoreServices
+import AVFoundation
 
 class ChatLogController: UICollectionViewController, UITextFieldDelegate, UICollectionViewDelegateFlowLayout, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
@@ -41,8 +43,8 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                 DispatchQueue.main.async(execute: {
                     self.collectionView?.reloadData()
                     //scroll to the last index
-                    let indexPath = IndexPath(item: self.messages.count - 1, section: 0)
-                    self.collectionView?.scrollToItem(at: indexPath, at: .bottom, animated: true)
+                    //                    let indexPath = IndexPath(item: self.messages.count - 1, section: 0)
+                    //                    self.collectionView?.scrollToItem(at: indexPath, at: .bottom, animated: true)
                 })
                 
             }, withCancel: nil)
@@ -127,6 +129,7 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         
         imagePickerController.allowsEditing = true
         imagePickerController.delegate = self
+        imagePickerController.mediaTypes = [kUTTypeImage as String, kUTTypeMovie as String]
         
         present(imagePickerController, animated: true, completion: nil)
     }
@@ -136,6 +139,74 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         let info = convertFromUIImagePickerControllerInfoKeyDictionary(info)
         
         
+        if let videoUrl = info[convertFromUIImagePickerControllerInfoKey(UIImagePickerController.InfoKey.mediaURL)] as? URL {
+            //we selected a video
+            handleVideoSelectedForUrl(videoUrl)
+        } else {
+            //we selected an image
+            handleImageSelectedForInfo(info as [String : AnyObject])
+        }
+        
+        dismiss(animated: true, completion: nil)
+    }
+    
+    fileprivate func handleVideoSelectedForUrl(_ url: URL) {
+        let filename = UUID().uuidString + ".mov"
+        let ref = Storage.storage().reference().child("message_movies").child(filename)
+        let uploadTask = ref.putFile(from: url, metadata: nil, completion: { (_, err) in
+            if let err = err {
+                print("Failed to upload movie:", err)
+                return
+            }
+            
+            ref.downloadURL(completion: { (downloadUrl, err) in
+                if let err = err {
+                    print("Failed to get download url:", err)
+                    return
+                }
+                
+                guard let downloadUrl = downloadUrl else { return }
+                
+                if let thumbnailImage = self.thumbnailImageForFileUrl(url) {
+                    
+                    self.uploadToFirebaseStorageUsingImage(thumbnailImage, completion: { (imageUrl) in
+                        let properties: [String: Any] = ["imageUrl": imageUrl, "imageWidth": thumbnailImage.size.width, "imageHeight": thumbnailImage.size.height, "videoUrl": downloadUrl.absoluteString]
+                        self.sendMessageWithProperties(properties)
+                        
+                    })
+                }
+                
+            })
+        })
+        
+        uploadTask.observe(.progress) { (snapshot) in
+            if let completedUnitCount = snapshot.progress?.completedUnitCount {
+                self.navigationItem.title = String(completedUnitCount)
+            }
+        }
+        
+        uploadTask.observe(.success) { (snapshot) in
+            self.navigationItem.title = self.user?.name
+        }
+    }
+    
+    fileprivate func thumbnailImageForFileUrl(_ fileUrl: URL) -> UIImage? {
+        let asset = AVAsset(url: fileUrl)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        
+        do {
+            
+            let thumbnailCGImage = try imageGenerator.copyCGImage(at: CMTimeMake(value: 1, timescale: 60), actualTime: nil)
+            return UIImage(cgImage: thumbnailCGImage)
+            
+        } catch let err {
+            print(err)
+        }
+        
+        return nil
+    }
+    
+    fileprivate func handleImageSelectedForInfo(_ info: [String: AnyObject]) {
         var selectedImageFromPicker: UIImage?
         
         if let editedImage = info["UIImagePickerControllerEditedImage"] as? UIImage {
@@ -146,13 +217,13 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         }
         
         if let selectedImage = selectedImageFromPicker {
-            uploadToFirebaseStorageUsingImage(selectedImage)
+            uploadToFirebaseStorageUsingImage(selectedImage, completion: { (imageUrl) in
+                self.sendMessageWithImageUrl(imageUrl, image: selectedImage)
+            })
         }
-        
-        dismiss(animated: true, completion: nil)
     }
     
-    fileprivate func uploadToFirebaseStorageUsingImage(_ image: UIImage) {
+    fileprivate func uploadToFirebaseStorageUsingImage(_ image: UIImage, completion: @escaping (_ imageUrl: String) -> ()) {
         let imageName = UUID().uuidString
         let ref = Storage.storage().reference().child("message_images").child(imageName)
         
@@ -170,7 +241,8 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
                         return
                     }
                     
-                    self.sendMessageWithImageUrl(url?.absoluteString ?? "", image: image)
+                    //                    self.sendMessageWithImageUrl(url?.absoluteString ?? "", image: image)
+                    completion(url?.absoluteString ?? "")
                 })
                 
             })
@@ -201,8 +273,8 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     @objc func handleKeyboardDidShow() {
         if messages.count > 0 {
-            let indexPath = IndexPath(item: messages.count - 1, section: 0)
-            collectionView?.scrollToItem(at: indexPath, at: .top, animated: true)
+            //            let indexPath = IndexPath(item: messages.count - 1, section: 0)
+            //            collectionView?.scrollToItem(at: indexPath, at: .top, animated: true)
         }
     }
     
@@ -237,9 +309,13 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! ChatMessageCell
+        
         cell.chatLogController = self
         
         let message = messages[indexPath.item]
+        
+        cell.message = message
+        
         cell.textView.text = message.text
         
         setupCell(cell, message: message)
@@ -253,6 +329,8 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
             cell.bubbleWidthAnchor?.constant = 200
             cell.textView.isHidden = true
         }
+        
+        cell.playButton.isHidden = message.videoUrl == nil
         
         return cell
     }
@@ -333,14 +411,14 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
         sendMessageWithProperties(properties)
     }
     
-    fileprivate func sendMessageWithProperties(_ properties: [String: AnyObject]) {
+    fileprivate func sendMessageWithProperties(_ properties: [String: Any]) {
         let ref = Database.database().reference().child("messages")
         let childRef = ref.childByAutoId()
         let toId = user!.id!
         let fromId = Auth.auth().currentUser!.uid
         let timestamp = Int(Date().timeIntervalSince1970)
         
-        var values: [String: AnyObject] = ["toId": toId as AnyObject, "fromId": fromId as AnyObject, "timestamp": timestamp as AnyObject]
+        var values: [String: Any] = ["toId": toId, "fromId": fromId, "timestamp": timestamp]
         
         //append properties dictionary onto values somehow??
         //key $0, value $1
@@ -449,9 +527,14 @@ class ChatLogController: UICollectionViewController, UITextFieldDelegate, UIColl
 
 
 
-// Helper function inserted by Swift 4.2 migrator.
+// Helper function
 fileprivate func convertFromUIImagePickerControllerInfoKeyDictionary(_ input: [UIImagePickerController.InfoKey: Any]) -> [String: Any] {
     return Dictionary(uniqueKeysWithValues: input.map {key, value in (key.rawValue, value)})
+}
+
+// Helper function inserted by Swift 4.2 migrator.
+fileprivate func convertFromUIImagePickerControllerInfoKey(_ input: UIImagePickerController.InfoKey) -> String {
+    return input.rawValue
 }
 
 // Helper function inserted by Swift 4.2 migrator.

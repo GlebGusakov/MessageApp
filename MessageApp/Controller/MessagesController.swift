@@ -38,20 +38,34 @@ class MessagesController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
-        
         let image = UIImage(named: "NewMessageIcon")
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: image, style: .plain, target: self, action: #selector(handleNewMessage))
-        
         checkIfUserIsLoggedIn()
-        
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
-        
     }
     
     var messages = [Message]()
     var messagesDictionary = [String: Message]()
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        
+        guard let uid = Auth.auth().currentUser?.uid else {
+            return
+        }
+        
+        let message = self.messages[indexPath.row]
+        
+        if let chatPartnerId = message.chatPartnerId() {        Database.database().reference().child("user-messages").child(uid).child(chatPartnerId).removeValue(completionBlock: { (error, ref) in
+                if error != nil {
+                    print("Failed to delete message:", error!)
+                    return
+                }
+                self.messagesDictionary.removeValue(forKey: chatPartnerId)
+                self.attemptReloadOfTable()
+            })
+        }
+    }
     
     func observeUserMessages() {
         guard let uid = Auth.auth().currentUser?.uid else {
@@ -62,8 +76,6 @@ class MessagesController: UITableViewController {
         ref.observe(.childAdded, with: { (snapshot) in
             
             let userId = snapshot.key
-            
-            print(uid, userId)
             Database.database().reference().child("user-messages").child(uid).child(userId).observe(.childAdded, with: { (snapshot) in
                 
                 let messageId = snapshot.key
@@ -76,25 +88,19 @@ class MessagesController: UITableViewController {
     
     fileprivate func fetchMessageWithMessageId(_ messageId: String) {
         let messagesReference = Database.database().reference().child("messages").child(messageId)
-        
         messagesReference.observeSingleEvent(of: .value, with: { (snapshot) in
-            
             if let dictionary = snapshot.value as? [String: AnyObject] {
                 let message = Message(dictionary: dictionary)
-                
                 if let chatPartnerId = message.chatPartnerId() {
                     self.messagesDictionary[chatPartnerId] = message
                 }
-                
                 self.attemptReloadOfTable()
             }
-            
         }, withCancel: nil)
     }
     
     fileprivate func attemptReloadOfTable() {
         self.timer?.invalidate()
-        
         self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
     }
     
@@ -103,10 +109,8 @@ class MessagesController: UITableViewController {
     @objc func handleReloadTable() {
         self.messages = Array(self.messagesDictionary.values)
         self.messages.sort(by: { (message1, message2) -> Bool in
-            
             return message1.timestamp?.int32Value > message2.timestamp?.int32Value
         })
-        
         DispatchQueue.main.async(execute: {
             self.tableView.reloadData()
         })
