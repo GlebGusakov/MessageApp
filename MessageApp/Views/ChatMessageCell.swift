@@ -13,6 +13,7 @@ class ChatMessageCell: UICollectionViewCell {
     
     var message: Message?
     
+    
     var chatLogController: ChatLogController?
     
     let activityIndicatorView: UIActivityIndicatorView = {
@@ -28,9 +29,7 @@ class ChatMessageCell: UICollectionViewCell {
         let image = UIImage(named: "VideoPlay")
         button.tintColor = UIColor.clear
         button.setImage(image, for: .normal)
-        
         button.addTarget(self, action: #selector(handlePlay), for: .touchUpInside)
-        
         return button
     }()
     
@@ -40,15 +39,12 @@ class ChatMessageCell: UICollectionViewCell {
     @objc func handlePlay() {
         if let videoUrlString = message?.videoUrl, let url = URL(string: videoUrlString) {
             player = AVPlayer(url: url)
-            
             playerLayer = AVPlayerLayer(player: player)
             playerLayer?.frame = bubbleView.bounds
             bubbleView.layer.addSublayer(playerLayer!)
-            
             player?.play()
             activityIndicatorView.startAnimating()
             playButton.isHidden = true
-            
             print("Attempting to play video......???")
         }
     }
@@ -71,7 +67,7 @@ class ChatMessageCell: UICollectionViewCell {
         return tv
     }()
     
-    static let blueColor = UIColor(r: 0, g: 137, b: 249)
+    static let blueColor = UIColor(r: 178, g: 0, b: 76)
     
     let bubbleView: UIView = {
         let view = UIView()
@@ -99,15 +95,21 @@ class ChatMessageCell: UICollectionViewCell {
         imageView.contentMode = .scaleAspectFill
         imageView.isUserInteractionEnabled = true
         imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomTap)))
-        
         return imageView
+    }()
+    
+    let timeLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 13)
+        label.textColor = UIColor.darkGray
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
     
     @objc func handleZoomTap(_ tapGesture: UITapGestureRecognizer) {
         if message?.videoUrl != nil {
             return
         }
-        
         if let imageView = tapGesture.view as? UIImageView {
             //PRO Tip: don't perform a lot of custom logic inside of a view class
             self.chatLogController?.performZoomInForStartingImageView(imageView)
@@ -124,56 +126,37 @@ class ChatMessageCell: UICollectionViewCell {
         addSubview(bubbleView)
         addSubview(textView)
         addSubview(profileImageView)
-        
+        addSubview(timeLabel)
         
         bubbleView.addSubview(messageImageView)
         messageImageView.leftAnchor.constraint(equalTo: bubbleView.leftAnchor).isActive = true
         messageImageView.topAnchor.constraint(equalTo: bubbleView.topAnchor).isActive = true
         messageImageView.widthAnchor.constraint(equalTo: bubbleView.widthAnchor).isActive = true
         messageImageView.heightAnchor.constraint(equalTo: bubbleView.heightAnchor).isActive = true
-        
         bubbleView.addSubview(activityIndicatorView)
         //x,y,w,h
         activityIndicatorView.centerXAnchor.constraint(equalTo: bubbleView.centerXAnchor).isActive = true
         activityIndicatorView.centerYAnchor.constraint(equalTo: bubbleView.centerYAnchor).isActive = true
         activityIndicatorView.widthAnchor.constraint(equalToConstant: 50).isActive = true
         activityIndicatorView.heightAnchor.constraint(equalToConstant: 50).isActive = true
-        
         //x,y,w,h
         profileImageView.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 8).isActive = true
         profileImageView.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
         profileImageView.widthAnchor.constraint(equalToConstant: 32).isActive = true
         profileImageView.heightAnchor.constraint(equalToConstant: 32).isActive = true
-        
         //x,y,w,h
-        
         bubbleViewRightAnchor = bubbleView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
-        
         bubbleViewRightAnchor?.isActive = true
-        
         bubbleViewLeftAnchor = bubbleView.leftAnchor.constraint(equalTo: profileImageView.rightAnchor, constant: 8)
-        //        bubbleViewLeftAnchor?.active = false
-        
-        
         bubbleView.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
-        
         bubbleWidthAnchor = bubbleView.widthAnchor.constraint(equalToConstant: 200)
         bubbleWidthAnchor?.isActive = true
-        
         bubbleView.heightAnchor.constraint(equalTo: self.heightAnchor).isActive = true
-        
-        //ios 9 constraints
         //x,y,w,h
-        //        textView.rightAnchor.constraintEqualToAnchor(self.rightAnchor).active = true
         textView.leftAnchor.constraint(equalTo: bubbleView.leftAnchor, constant: 8).isActive = true
         textView.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
-        
         textView.rightAnchor.constraint(equalTo: bubbleView.rightAnchor).isActive = true
-        //        textView.widthAnchor.constraintEqualToConstant(200).active = true
-        
-        
         textView.heightAnchor.constraint(equalTo: self.heightAnchor).isActive = true
-        
         bubbleView.addSubview(playButton)
         //x,y,w,h
         playButton.centerXAnchor.constraint(equalTo: bubbleView.centerXAnchor).isActive = true
@@ -181,6 +164,11 @@ class ChatMessageCell: UICollectionViewCell {
         playButton.widthAnchor.constraint(equalToConstant: 50).isActive = true
         playButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
         bringSubviewToFront(playButton)
+        //need x,y,width,height anchors
+        timeLabel.rightAnchor.constraint(equalTo: bubbleView.rightAnchor).isActive = true
+        timeLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: 18).isActive = true
+        timeLabel.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        timeLabel.heightAnchor.constraint(equalTo: (self.heightAnchor)).isActive = true
     }
     
     required init?(coder aDecoder: NSCoder) {

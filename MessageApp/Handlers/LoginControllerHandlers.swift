@@ -139,11 +139,14 @@ extension LoginController: UIImagePickerControllerDelegate, UINavigationControll
         loginRegisterButton.setTitle(title, for: UIControl.State())
         if loginRegisterSegmentedControl.selectedSegmentIndex == 0 {
             UIView.animate(withDuration: 0.5) {
+                self.profileImageView.isUserInteractionEnabled = false
                 self.nameContainerView.alpha = 0
             }
         } else {
             UIView.animate(withDuration: 0.5) {
                 self.nameContainerView.alpha = 1
+                self.profileImageView.isUserInteractionEnabled = true
+
             }
         }
      

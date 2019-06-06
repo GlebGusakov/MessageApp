@@ -8,6 +8,7 @@
 
 import UIKit
 import Firebase
+
 // FIXME: comparison operators with optionals were removed from the Swift Standard Libary.
 // Consider refactoring the code to use the non-optional operators.
 fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
@@ -43,19 +44,17 @@ class MessagesController: UITableViewController {
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: image, style: .plain, target: self, action: #selector(handleNewMessage))
         checkIfUserIsLoggedIn()
         tableView.register(UserCell.self, forCellReuseIdentifier: cellId)
+//        view.backgroundColor = UIColor(patternImage: UIImage(named: "Image")!)
     }
     
     var messages = [Message]()
     var messagesDictionary = [String: Message]()
     
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        
         guard let uid = Auth.auth().currentUser?.uid else {
             return
         }
-        
         let message = self.messages[indexPath.row]
-        
         if let chatPartnerId = message.chatPartnerId() {        Database.database().reference().child("user-messages").child(uid).child(chatPartnerId).removeValue(completionBlock: { (error, ref) in
                 if error != nil {
                     print("Failed to delete message:", error!)
@@ -71,18 +70,13 @@ class MessagesController: UITableViewController {
         guard let uid = Auth.auth().currentUser?.uid else {
             return
         }
-        
         let ref = Database.database().reference().child("user-messages").child(uid)
         ref.observe(.childAdded, with: { (snapshot) in
-            
             let userId = snapshot.key
             Database.database().reference().child("user-messages").child(uid).child(userId).observe(.childAdded, with: { (snapshot) in
-                
                 let messageId = snapshot.key
                 self.fetchMessageWithMessageId(messageId)
-                
             }, withCancel: nil)
-            
         }, withCancel: nil)
     }
     
@@ -122,10 +116,9 @@ class MessagesController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath) as! UserCell
-        
         let message = messages[indexPath.row]
         cell.message = message
-        
+        cell.alpha = 0
         return cell
     }
     
@@ -135,21 +128,17 @@ class MessagesController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let message = messages[indexPath.row]
-        
         guard let chatPartnerId = message.chatPartnerId() else {
             return
         }
-        
         let ref = Database.database().reference().child("users").child(chatPartnerId)
         ref.observeSingleEvent(of: .value, with: { (snapshot) in
             guard let dictionary = snapshot.value as? [String: AnyObject] else {
                 return
             }
-            
             let user = User(dictionary: dictionary)
             user.id = chatPartnerId
             self.showChatControllerForUser(user)
-            
         }, withCancel: nil)
     }
     
@@ -173,13 +162,11 @@ class MessagesController: UITableViewController {
             //for some reason uid = nil
             return
         }
-        
         Database.database().reference().child("users").child(uid).observeSingleEvent(of: .value, with: { (snapshot) in
             if let dictionary = snapshot.value as? [String: AnyObject] {
                 let user = User(dictionary: dictionary)
                 self.setupNavBarWithUser(user)
             }
-            
         }, withCancel: nil)
     }
     

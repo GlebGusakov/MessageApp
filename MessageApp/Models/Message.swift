@@ -27,7 +27,6 @@ class Message: NSObject {
         self.timestamp = dictionary["timestamp"] as? NSNumber
         self.imageUrl = dictionary["imageUrl"] as? String
         self.videoUrl = dictionary["videoUrl"] as? String
-        
         self.imageWidth = dictionary["imageWidth"] as? NSNumber
         self.imageHeight = dictionary["imageHeight"] as? NSNumber
     }
